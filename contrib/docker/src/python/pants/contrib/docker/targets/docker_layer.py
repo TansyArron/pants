@@ -38,6 +38,17 @@ class DockerClasspathLayerTarget(DockerLayer):
   pass
 
 
+"""
+docker_service_layer(
+  basename = 'hello-example',
+  base_dir = '/data/app/',
+  canonical_docker_repo = 'example',
+  binary = ':main-bin'
+  bundles = [
+    bundle(relative_to='config', fileset=globs('config/*'))
+  ]
+)
+"""
 class DockerServiceLayerTarget(DockerLayer):
   def __init__(self, payload=None, bundle_name=None, binary=None, bundles=None, **kwargs):
     self._binary_spec = binary

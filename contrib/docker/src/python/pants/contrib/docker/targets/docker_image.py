@@ -17,9 +17,9 @@ from pants.build_graph.target import Target
 
 class DockerServiceImageTarget(Target):
 
-  def __init__(self, payload=None, image_repo=None, layers=None, service_config=None, base_image=None, **kwargs):
+  def __init__(self, payload=None, image_repo=None, layers=None, image_config=None, base_image=None, **kwargs):
     self._layer_specs = layers or []
-    self._service_config_spec = service_config
+    self._image_config_spec = image_config
     self._base_image_spec = base_image
     payload = payload or Payload()
     payload.add_fields({
@@ -37,8 +37,8 @@ class DockerServiceImageTarget(Target):
       yield spec
     for layer_spec in self._layer_specs:
       yield layer_spec
-    if self._service_config_spec:
-      yield self._service_config_spec
+    if self._image_config_spec:
+      yield self._image_config_spec
     if self._base_image_spec:
       yield self._base_image_spec
 
@@ -56,7 +56,7 @@ class DockerServiceImageTarget(Target):
     return self._build_graph.get_target_from_spec(self._base_image_spec, relative_to=self.address.spec_path)
 
   @property
-  def service_config(self):
-    if not self._service_config_spec:
+  def image_config(self):
+    if not self._image_config_spec:
       return None
-    return self._build_graph.get_target_from_spec(self._service_config_spec, relative_to=self.address.spec_path)
+    return self._build_graph.get_target_from_spec(self._image_config_spec, relative_to=self.address.spec_path)
