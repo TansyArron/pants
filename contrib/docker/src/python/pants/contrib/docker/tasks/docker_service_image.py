@@ -86,13 +86,11 @@ class DockerServiceImageTask(Task):
         raise Exception
       image_product = DockerImageProduct(vt.results_dir)
       product_dict[vt.target] = image_product
-      for layer_product in image_product.extra_layers:
-        self.layer_digest_map[layer_product.digest] = layer_product
 
   def app_config_for_env(self, target):
-    service_config_product = self.service_config_products[target.docker_service_image.service_config]
-    service_config_for_env = service_config_product.config_from_env(target.environment)
-    app_config = service_config_for_env.app(target.app_name)
+    image_config_product = self.image_config_products[target.docker_service_image.image_config]
+    image_config_for_env = image_config_product.config_from_env(target.environment)
+    app_config = image_config_for_env.app(target.app_name)
     return app_config
 
   def config_labels(self, target):
@@ -106,7 +104,7 @@ class DockerServiceImageTask(Task):
   #     return value
   #   labels = {k: maybe_stringify(v) for k, v in app_labels.items()}
   #   # Add the full jsonc for the app as well, for aurora hacking
-  #   raw_config = self.service_config_products[target.docker_service_image.service_config].raw_config
+  #   raw_config = self.image_config_products[target.docker_service_image.image_config].raw_config
   #   labels['raw_config'] = json.dumps(raw_config)
   #   return labels
 
@@ -121,8 +119,7 @@ class DockerServiceImageTask(Task):
       },
     }
 
-  def layer_products_for_target(self, vt, extra_layers=None):
-    extra_layers = extra_layers or []
+  def layer_products_for_target(self, vt):
 
     def target_layers_iter():
       base_image = vt.target.docker_service_image.base_image
@@ -131,8 +128,6 @@ class DockerServiceImageTask(Task):
           yield layer_product
       for layer in vt.target.docker_service_image.layers:
         yield self.layer_products[layer]
-      for layer_product in extra_layers:
-        yield layer_product
     return list(target_layers_iter())
 
   def diff_ids(self, layers):
@@ -155,50 +150,9 @@ class DockerServiceImageTask(Task):
     }
 
   def write_image_manifest(self, vt):
-    extra_layers = [self.jvm_runner_layer(vt)]
-    layers = self.layer_products_for_target(vt, extra_layers=extra_layers)
+    layers = self.layer_products_for_target(vt)
     return DockerImageProduct.write_image_manifest(
       cache_dir=vt.results_dir,
       config=self.image_config(vt.target, layers),
       manifest_without_config_descriptor=self.partial_image_manifest(layers),
-      extra_layers=extra_layers,
     )
-
-  def jvm_runner_layer(self, vt):
-    return self.write_runner_layer(vt)
-
-  def write_runner_layer(self, vt):
-    temp_dir = mkdtemp()
-    try:
-      return self.create_runner_layer(vt, temp_dir)
-    finally:
-      safe_rmtree(temp_dir)
-
-  def create_runner_layer(self, vt, temp_dir):
-    data_app_dir = os.path.join(temp_dir, 'data/app/')
-    safe_mkdir(data_app_dir)
-
-    # .get_json_dict()[target.environment]
-    app = self.app_config_for_env(vt.target)
-    extras = dict(
-      build_time=str(int(time.time())),
-      build_version='version',
-      env=vt.target.environment,
-      app=json.loads(app.to_json()),
-      bundle_name=app.service.build.app_name,
-      jar_name=app.service.build.jar_name,
-    )
-    with open(os.path.join(data_app_dir, 'jvm-runner-defaults.json'), 'wb') as f:
-      json.dump(extras, f)
-    shutil.copy2('build-support/docker/jvm_runner.py', data_app_dir)
-    tarfile_tmp_location = os.path.join(temp_dir, 'layer.tar')
-    create_stable_tar_from_directory(
-      source_dir=data_app_dir,
-      tar_root='data/app',
-      tarfile_location=tarfile_tmp_location,
-    )
-    layer_sha256 = stream_sha256(tarfile_tmp_location)
-    layer_dir = os.path.join(vt.results_dir, 'sha256:{}'.format(layer_sha256))
-    safe_mkdir(layer_dir)
-    shutil.copy2(tarfile_tmp_location, layer_dir)
-    return LayerProduct.write_metadata_json(layer_dir)

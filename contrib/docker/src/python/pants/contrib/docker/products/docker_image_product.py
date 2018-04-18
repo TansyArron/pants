@@ -26,9 +26,7 @@ class DockerImageProduct(object):
   METADATA_JSON_FILE_NAME = 'metadata.json'
 
   @classmethod
-  def write_image_manifest(cls, cache_dir, config, manifest_without_config_descriptor, extra_layers=None):
-    extra_layers = extra_layers or []
-
+  def write_image_manifest(cls, cache_dir, config, manifest_without_config_descriptor):
     config_stable_json = stable_json_dumps(config)
     config_blob_path = os.path.join(cache_dir, cls.CONFIG_JSON_FILE_NAME)
     with open(config_blob_path, 'wb') as f:
@@ -47,7 +45,6 @@ class DockerImageProduct(object):
     metadata = {
       'manifest_digest': manifest_digest,
       'config_digest': config_digest,
-      'extra_layers': [layer_product.digest for layer_product in extra_layers],
     }
     with open(os.path.join(cache_dir, cls.METADATA_JSON_FILE_NAME), 'wb') as f:
       json.dump(metadata, f)
@@ -59,13 +56,6 @@ class DockerImageProduct(object):
   def metadata(self):
     with open(os.path.join(self._cache_dir, self.METADATA_JSON_FILE_NAME), 'rb') as f:
       return json.load(f)
-
-  @property
-  def extra_layers(self):
-    def layer_product_iter():
-      for layer_path in self.metadata['extra_layers']:
-        yield LayerProduct(os.path.join(self._cache_dir, layer_path))
-    return list(layer_product_iter())
 
   @property
   def manifest_digest(self):
