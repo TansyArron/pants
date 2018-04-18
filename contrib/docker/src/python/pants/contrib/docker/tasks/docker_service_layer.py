@@ -26,7 +26,7 @@ from pants.contrib.docker.util.tar import create_stable_tar_from_directory
 
 
 class DockerServiceLayerTask(JvmBinaryTask):
-  """Create the Dockerfile and build context for a Docker image composed of an application bundle."""
+  """Create a layer containing an application bundle."""
 
   APPLICATION_ROOT = '/data/app'
 
@@ -76,10 +76,7 @@ class DockerServiceLayerTask(JvmBinaryTask):
       layer_digest_map[layer_product.digest] = layer_product
 
   def create_layer(self, vt, temp_dir_path):
-    """construct the build context.
-
-    :param str build_context: Full path to the output build context.
-    """
+    """Construct a directory with the file structure and context."""
     app_root = os.path.join(self.APPLICATION_ROOT, vt.target.bundle_name)
 
     deps_dir = os.path.join(temp_dir_path, 'data/deps')
@@ -94,7 +91,6 @@ class DockerServiceLayerTask(JvmBinaryTask):
     jar_libs = self.get_third_party_jars(vt.target)
     third_party_symlink_map = self.create_third_party_symlink_map(app_root, jar_libs)
     self.copy_bundles(vt.target, bundle_dir)
-    self._copy_css_files(vt.target, resources_dir)
 
     classpath = self.create_classpath(
       targets=vt.target.closure(bfs=True),
@@ -118,6 +114,7 @@ class DockerServiceLayerTask(JvmBinaryTask):
     LayerProduct.write_metadata_json(vt.results_dir)
 
   def create_classpath(self, targets, classpath_products, base_dir, excludes=None):
+    """Create a classpath for this jvm_app"""
     # TODO(mateo): I worked with twitter and these products are now in the classpath. But to consume
     # this class would have to move downstream of 'bundle'. I would like to break the consolidate_classpath into
     # its own task so it could run right after compile (which needs the loose sources due to
@@ -153,20 +150,24 @@ class DockerServiceLayerTask(JvmBinaryTask):
     return classpath
 
   def get_third_party_jars(self, target):
-    # Get a list of this app's 3rdparty dependencies.
-    # Each one is already in the base image - at docker build we symlink every needed jar into the app's classpath.
+    """Get a list of this app's 3rdparty dependencies.
+    
+    All 3rdparty jars are included in the docker_classpath_layer, so we symlink only the jars we need into the 
+    jvm_apps classpath.
+    """
     runtime_classpath = self.context.products.get_data('runtime_classpath')
     third_party_jars = runtime_classpath.get_artifact_classpath_entries_for_targets(target.closure(bfs=True))
     return [os.path.basename(artifact.path) for _, artifact in third_party_jars]
 
   def create_third_party_symlink_map(self, app_root, jar_libs):
+    """Construct a map of symlinks to create from the lib directory of this app to the location of all 3rdparty jars."""
     return {
       os.path.join(app_root, 'libs', jar_name): os.path.join('/data/deps', jar_name)
       for jar_name in jar_libs
     }
 
   def copy_bundles(self, target, dest_dir):
-    # Copy in every file in the app's resource_bundles.
+    """Copy in every file in the app's bundles."""
     for bundle in target.bundles:
       self.copy_bundle(bundle, dest_dir)
 
