@@ -17,6 +17,10 @@ from pants.build_graph.target import Target
 
 
 class DockerLayer(Target):
+  """Base class for all Docker Layer targets.
+
+  :API: public
+  """
   def __init__(self, payload=None, base_dir=None, canonical_docker_repo=None, **kwargs):
     payload = payload or Payload()
     payload.add_fields({
@@ -35,21 +39,29 @@ class DockerLayer(Target):
 
 
 class DockerClasspathLayerTarget(DockerLayer):
+  """A Docker Layer containing every jar on the consolidated classpath.
+
+  :API: public
+  """
   pass
 
 
 """
 docker_service_layer(
-  basename = 'hello-example',
-  base_dir = '/data/app/',
-  canonical_docker_repo = 'example',
+  name = 'hello-example',
+  base_dir = '/data/app/',  # An absolute path within the docker image where this layer should be unpacked
+  canonical_docker_repo = 'example', # If this layer should be mounted from a specific docker registry repo
   binary = ':main-bin'
   bundles = [
     bundle(relative_to='config', fileset=globs('config/*'))
   ]
 )
 """
-class DockerServiceLayerTarget(DockerLayer):
+class DockerJVMAppLayerTarget(DockerLayer):
+  """A Docker Layer containing the equivalent of a jvm_app.
+
+  :API: public
+  """
   def __init__(self, payload=None, bundle_name=None, binary=None, bundles=None, **kwargs):
     self._binary_spec = binary
     payload = payload or Payload()
