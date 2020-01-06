@@ -6,9 +6,9 @@ from typing import Optional
 from pants.backend.python.rules.inject_init import InjectedInitDigest
 from pants.backend.python.rules.pex import Pex
 from pants.backend.python.rules.pex_from_target_closure import CreatePexFromTargetClosure
-from pants.backend.python.subsystems.pytest import PyTest
 from pants.backend.python.subsystems.python_setup import PythonSetup
 from pants.backend.python.subsystems.subprocess_environment import SubprocessEncodingEnvironment
+from pants.backend.python.test_runner.pytest import PyTest
 from pants.build_graph.address import Address
 from pants.engine.addressable import BuildFileAddresses
 from pants.engine.fs import Digest, DirectoriesToMerge

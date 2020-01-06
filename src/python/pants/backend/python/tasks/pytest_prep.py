@@ -8,9 +8,9 @@ from pex.pex import PEX
 from pex.pex_builder import PEXBuilder
 from pex.pex_info import PexInfo
 
-from pants.backend.python.subsystems.pytest import PyTest
 from pants.backend.python.targets.python_tests import PythonTests
 from pants.backend.python.tasks.python_execution_task_base import PythonExecutionTaskBase
+from pants.backend.python.test_runner.pytest import PyTest
 from pants.util.memo import memoized_classproperty
 
 

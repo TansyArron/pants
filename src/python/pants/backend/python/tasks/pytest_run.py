@@ -16,11 +16,11 @@ from io import StringIO
 from textwrap import dedent
 from typing import Any
 
-from pants.backend.python.subsystems.pytest import PyTest
 from pants.backend.python.targets.python_tests import PythonTests
 from pants.backend.python.tasks.gather_sources import GatherSources
 from pants.backend.python.tasks.pytest_prep import PytestPrep
 from pants.backend.python.tasks.python_execution_task_base import ensure_interpreter_search_path_env
+from pants.backend.python.test_runner.pytest import PyTest
 from pants.base.build_environment import get_buildroot
 from pants.base.deprecated import deprecated_conditional
 from pants.base.exceptions import ErrorWhileTesting, TaskError

@@ -11,7 +11,6 @@ from pants.backend.python.rules import (
   pex,
   pex_from_target_closure,
   python_create_binary,
-  python_test_runner,
 )
 from pants.backend.python.subsystems import python_native_code, subprocess_environment
 from pants.backend.python.targets.python_app import PythonApp
@@ -40,6 +39,7 @@ from pants.backend.python.tasks.resolve_requirements import ResolveRequirements
 from pants.backend.python.tasks.select_interpreter import SelectInterpreter
 from pants.backend.python.tasks.setup_py import SetupPy
 from pants.backend.python.tasks.unpack_wheels import UnpackWheels
+from pants.backend.python.test_runner import python_test_runner
 from pants.build_graph.build_file_aliases import BuildFileAliases
 from pants.build_graph.resources import Resources
 from pants.goal.task_registrar import TaskRegistrar as task
